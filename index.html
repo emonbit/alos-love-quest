@@ -1,0 +1,664 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ayesha's Little Love Quest 💗</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;600;700&family=Quicksand:wght@500;700&display=swap" rel="stylesheet">
+    <style>
+        * {
+            font-family: 'Fredoka', 'Quicksand', sans-serif;
+            user-select: none;
+            -webkit-user-select: none;
+        }
+
+        body {
+            background: linear-gradient(135deg, #ffeef8 0%, #ffd6e8 50%, #f3d5ff 100%);
+            overflow-x: hidden;
+            min-height: 100vh;
+        }
+
+        .glass-card {
+            background: rgba(255, 255, 255, 0.75);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 2px solid rgba(255, 255, 255, 0.9);
+            box-shadow: 0 15px 35px rgba(255, 105, 180, 0.15);
+        }
+
+        .floating-heart {
+            position: absolute;
+            pointer-events: none;
+            animation: floatUp linear infinite;
+        }
+
+        @keyframes floatUp {
+            0% {
+                transform: translateY(100vh) scale(0.6) rotate(0deg);
+                opacity: 0.8;
+            }
+            100% {
+                transform: translateY(-10vh) scale(1.2) rotate(360deg);
+                opacity: 0;
+            }
+        }
+
+        @keyframes pulseGlow {
+            0%, 100% { transform: scale(1); filter: drop-shadow(0 0 10px rgba(255,105,180,0.6)); }
+            50% { transform: scale(1.08); filter: drop-shadow(0 0 20px rgba(255,105,180,0.9)); }
+        }
+
+        .pulse-glow {
+            animation: pulseGlow 2.5s infinite ease-in-out;
+        }
+
+        .flower-card {
+            transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+
+        .flower-card:hover {
+            transform: translateY(-8px) scale(1.03);
+        }
+
+        .bounce-gentle {
+            animation: bounceGentle 2s infinite ease-in-out;
+        }
+
+        @keyframes bounceGentle {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-10px); }
+        }
+
+        .cloud-draggable {
+            touch-action: none;
+            transition: transform 0.1s ease;
+        }
+
+        canvas#confettiCanvas {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 100;
+        }
+    </style>
+</head>
+<body class="flex flex-col items-center justify-center min-h-screen p-4 text-slate-800">
+
+    <canvas id="confettiCanvas"></canvas>
+
+    <!-- Floating Background Hearts Container -->
+    <div id="bgHeartsContainer" class="fixed inset-0 pointer-events-none z-0 overflow-hidden"></div>
+
+    <!-- Top Music & Sound Toggle -->
+    <div class="fixed top-4 right-4 z-50 flex items-center gap-2">
+        <button id="soundToggle" onclick="toggleAudio()" class="glass-card px-4 py-2 rounded-full font-bold text-pink-600 hover:bg-white/90 transition shadow-lg flex items-center gap-2 text-sm md:text-base">
+            <span id="soundIcon">🎵</span>
+            <span id="soundText">Music: OFF</span>
+        </button>
+    </div>
+
+    <!-- Main Container -->
+    <main id="gameContainer" class="relative z-10 w-full max-w-2xl min-h-[580px] glass-card rounded-3xl p-6 md:p-8 flex flex-col justify-between items-center text-center shadow-2xl transition-all duration-500 my-auto">
+        
+        <!-- SCREEN 0: TITLE SCREEN -->
+        <div id="screenTitle" class="w-full flex flex-col items-center justify-center my-auto space-y-6">
+            <div class="relative">
+                <div class="text-7xl md:text-8xl pulse-glow select-none">💖</div>
+                <div class="absolute -top-2 -right-2 text-3xl animate-bounce">✨</div>
+            </div>
+            
+            <div class="space-y-2">
+                <h1 class="text-3xl md:text-5xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-pink-500 via-rose-500 to-purple-600 drop-shadow-sm">
+                    ALO's Little Love Quest
+                </h1>
+                <p class="text-pink-600 font-semibold text-lg md:text-xl">A magical little journey made just for you ✨</p>
+            </div>
+
+            <div class="bg-pink-50/80 p-4 rounded-2xl border border-pink-200 max-w-md text-pink-700 text-sm md:text-base shadow-inner">
+                Are you ready to collect sweet hearts, unlock romantic secrets, and discover a special message made with lots of love? 🌸
+            </div>
+
+            <button onclick="startGame()" class="px-8 py-4 bg-gradient-to-r from-pink-400 to-rose-500 hover:from-pink-500 hover:to-rose-600 text-white font-bold text-xl rounded-2xl shadow-xl hover:shadow-2xl hover:scale-105 active:scale-95 transition-all duration-200 flex items-center gap-3 group">
+                <span>Start My Quest</span>
+                <span class="group-hover:translate-x-1 transition-transform">✨</span>
+            </button>
+        </div>
+
+        <!-- SCREEN 1: CATCH THE HEARTS GAME -->
+        <div id="screenLevel1" class="w-full hidden flex-col items-center justify-between h-full space-y-4">
+            <div class="w-full flex justify-between items-center bg-white/60 px-4 py-2 rounded-2xl border border-pink-200">
+                <div class="text-pink-600 font-bold text-sm md:text-base">Level 1: Hearts Collector 💕</div>
+                <div class="text-pink-700 font-extrabold text-lg">Score: <span id="scoreText" class="text-rose-600">0</span>/15</div>
+            </div>
+
+            <div class="text-sm text-pink-600 font-medium">Catch 15 falling hearts for ALO! Golden ones give extra love! 🌟</div>
+
+            <!-- Game Canvas Container -->
+            <div class="relative w-full h-[360px] bg-gradient-to-b from-pink-100/60 to-purple-100/60 rounded-2xl border-2 border-pink-200 overflow-hidden shadow-inner">
+                <canvas id="gameCanvas" class="w-full h-full block cursor-pointer"></canvas>
+            </div>
+
+            <div id="l1VictoryMsg" class="hidden w-full bg-emerald-100/90 border border-emerald-300 text-emerald-800 p-3 rounded-2xl font-bold animate-fade-in">
+                🎉 Level 1 Cleared! You captured all the love! 💕
+                <button onclick="goToLevel2()" class="mt-2 block mx-auto px-6 py-2 bg-gradient-to-r from-rose-400 to-pink-500 text-white font-bold rounded-xl shadow hover:scale-105 transition">
+                    Continue to Level 2 🌸
+                </button>
+            </div>
+        </div>
+
+        <!-- SCREEN 2: MEMORY & CUTE QUIZ -->
+        <div id="screenLevel2" class="w-full hidden flex-col items-center justify-center space-y-6 my-auto">
+            <div class="text-pink-600 font-bold text-sm bg-pink-100 px-3 py-1 rounded-full border border-pink-200">
+                Level 2: Memory & Cute Quiz Lane 🌸
+            </div>
+
+            <h2 id="quizQuestion" class="text-xl md:text-2xl font-bold text-slate-800 min-h-[60px] flex items-center justify-center">
+                Question loading...
+            </h2>
+
+            <div id="quizOptions" class="w-full max-w-md space-y-3">
+                <!-- Dynamic quiz options -->
+            </div>
+
+            <div id="quizFeedback" class="min-h-[50px] text-pink-600 font-semibold text-lg flex items-center justify-center animate-bounce"></div>
+        </div>
+
+        <!-- SCREEN 3: COMPLIMENT GARDEN -->
+        <div id="screenLevel3" class="w-full hidden flex-col items-center justify-center space-y-5 my-auto">
+            <div class="text-pink-600 font-bold text-sm bg-pink-100 px-3 py-1 rounded-full border border-pink-200">
+                Level 3: The Magical Compliment Garden 🌼
+            </div>
+
+            <p class="text-slate-600 text-sm md:text-base">Click on each flower to make it bloom and reveal a special compliment for ALO! 🌺</p>
+
+            <div id="flowerGrid" class="grid grid-cols-2 md:grid-cols-3 gap-3 md:gap-4 w-full">
+                <!-- 5 Flowers dynamically added here -->
+            </div>
+
+            <button id="l3NextBtn" onclick="goToLevel4()" class="hidden px-8 py-3 bg-gradient-to-r from-pink-500 to-rose-500 text-white font-bold text-lg rounded-2xl shadow-xl hover:scale-105 transition">
+                Unlock Secret Puzzle 🔍
+            </button>
+        </div>
+
+        <!-- SCREEN 4: HIDDEN SECRET PUZZLE -->
+        <div id="screenLevel4" class="w-full hidden flex-col items-center justify-center space-y-4 my-auto">
+            <div class="text-pink-600 font-bold text-sm bg-pink-100 px-3 py-1 rounded-full border border-pink-200">
+                Level 4: The Hidden Secret Puzzle 🔍
+            </div>
+
+            <p class="text-pink-700 font-medium text-sm md:text-base">
+                Find the Secret Golden Heart key hidden behind the fluffy clouds! Drag or click clouds to clear them. ☁️✨
+            </p>
+
+            <div id="puzzleArea" class="relative w-full max-w-md h-64 bg-gradient-to-b from-sky-100 to-pink-100 rounded-3xl border-2 border-pink-200 overflow-hidden flex items-center justify-center shadow-inner">
+                <!-- Hidden Golden Heart Key -->
+                <div id="goldenKey" onclick="revealGrandFinal()" class="cursor-pointer text-6xl pulse-glow transition hover:scale-125 z-10 p-4">
+                    🔑💖
+                </div>
+
+                <!-- Overlapping Floating Clouds -->
+                <div class="cloud-draggable absolute top-4 left-6 text-6xl cursor-pointer select-none z-20 transition-transform" onclick="moveCloud(this)">☁️</div>
+                <div class="cloud-draggable absolute top-12 right-10 text-7xl cursor-pointer select-none z-20 transition-transform" onclick="moveCloud(this)">☁️</div>
+                <div class="cloud-draggable absolute bottom-8 left-16 text-7xl cursor-pointer select-none z-20 transition-transform" onclick="moveCloud(this)">☁️</div>
+                <div class="cloud-draggable absolute top-20 left-1/3 text-8xl cursor-pointer select-none z-20 transition-transform" onclick="moveCloud(this)">☁️</div>
+            </div>
+
+            <p id="puzzleHint" class="text-xs text-pink-400 font-medium">Tap clouds to sweep them away!</p>
+        </div>
+
+        <!-- SCREEN 5: FINAL ROMANTIC REVEAL -->
+        <div id="screenFinal" class="w-full hidden flex-col items-center justify-center space-y-6 my-auto py-4">
+            <div class="text-7xl md:text-8xl bounce-gentle drop-shadow-lg">👑💖🏆</div>
+
+            <div class="space-y-4 max-w-lg">
+                <div class="text-pink-600 font-bold text-xl md:text-2xl italic">
+                    "ALO, do you know why I made this game?"
+                </div>
+                
+                <div class="bg-white/80 border-2 border-pink-300 p-5 rounded-2xl shadow-lg space-y-3 transform hover:scale-102 transition">
+                    <p class="text-rose-600 font-bold text-lg md:text-xl">
+                        "Because making you smile is one of my favorite things in the whole universe." ✨
+                    </p>
+                    <hr class="border-pink-200">
+                    <p class="text-slate-700 font-extrabold text-lg md:text-2xl leading-relaxed">
+                        "You won the game… but honestly, ALO, you already won my heart forever." ❤️
+                    </p>
+                </div>
+            </div>
+
+            <div class="flex flex-wrap gap-4 justify-center items-center pt-2">
+                <button onclick="triggerFireworks()" class="px-6 py-3 bg-gradient-to-r from-rose-400 to-pink-500 text-white font-bold text-base rounded-2xl shadow-lg hover:scale-105 transition flex items-center gap-2">
+                    <span>Fireworks & Hearts</span> 🎉
+                </button>
+                <button onclick="resetGame()" class="px-6 py-3 bg-white text-pink-600 border border-pink-300 font-bold text-base rounded-2xl shadow hover:bg-pink-50 transition">
+                    Play Again 🔄
+                </button>
+            </div>
+        </div>
+
+    </main>
+
+    <!-- JavaScript Game Engine & Web Audio Synth -->
+    <script>
+        let audioCtx = null;
+        let isAudioOn = false;
+        let bgMusicInterval = null;
+
+        function initAudio() {
+            if (!audioCtx) {
+                audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            }
+        }
+
+        function playTone(freq, duration, type = 'sine', volume = 0.1) {
+            if (!isAudioOn || !audioCtx) return;
+            try {
+                const osc = audioCtx.createOscillator();
+                const gain = audioCtx.createGain();
+                osc.type = type;
+                osc.frequency.setValueAtTime(freq, audioCtx.currentTime);
+                gain.gain.setValueAtTime(volume, audioCtx.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.0001, audioCtx.currentTime + duration);
+                osc.connect(gain);
+                gain.connect(audioCtx.destination);
+                osc.start();
+                osc.stop(audioCtx.currentTime + duration);
+            } catch(e) {}
+        }
+
+        function playPopSound() {
+            playTone(523.25, 0.15, 'sine', 0.2); // C5
+            setTimeout(() => playTone(659.25, 0.15, 'sine', 0.2), 50); // E5
+        }
+
+        function playGoldenSound() {
+            playTone(587.33, 0.1, 'triangle', 0.25);
+            setTimeout(() => playTone(880, 0.2, 'sine', 0.25), 80);
+        }
+
+        function playBloomSound() {
+            playTone(392.00, 0.15, 'sine', 0.15); // G4
+            setTimeout(() => playTone(493.88, 0.15, 'sine', 0.15), 80); // B4
+            setTimeout(() => playTone(587.33, 0.25, 'sine', 0.15), 160); // D5
+        }
+
+        function playFanfare() {
+            const notes = [523.25, 659.25, 783.99, 1046.50];
+            notes.forEach((freq, idx) => {
+                setTimeout(() => playTone(freq, 0.3, 'triangle', 0.2), idx * 120);
+            });
+        }
+
+        function toggleAudio() {
+            initAudio();
+            if (audioCtx.state === 'suspended') {
+                audioCtx.resume();
+            }
+            isAudioOn = !isAudioOn;
+            
+            const text = document.getElementById('soundText');
+            const icon = document.getElementById('soundIcon');
+            
+            if (isAudioOn) {
+                text.innerText = "Music: ON";
+                icon.innerText = "🎶";
+                startAmbientMelody();
+            } else {
+                text.innerText = "Music: OFF";
+                icon.innerText = "🎵";
+                if (bgMusicInterval) clearInterval(bgMusicInterval);
+            }
+        }
+
+        function startAmbientMelody() {
+            if (bgMusicInterval) clearInterval(bgMusicInterval);
+            const notes = [261.63, 329.63, 392.00, 440.00, 523.25];
+            let step = 0;
+            bgMusicInterval = setInterval(() => {
+                if (!isAudioOn) return;
+                const freq = notes[step % notes.length];
+                playTone(freq, 0.8, 'sine', 0.04);
+                step++;
+            }, 1200);
+        }
+
+        function createBgHearts() {
+            const container = document.getElementById('bgHeartsContainer');
+            const heartChars = ['💖', '🌸', '✨', '💕', '🌷'];
+            for (let i = 0; i < 15; i++) {
+                const heart = document.createElement('div');
+                heart.className = 'floating-heart';
+                heart.innerText = heartChars[Math.floor(Math.random() * heartChars.length)];
+                heart.style.left = Math.random() * 100 + 'vw';
+                heart.style.animationDuration = (6 + Math.random() * 6) + 's';
+                heart.style.animationDelay = (Math.random() * 5) + 's';
+                heart.style.fontSize = (16 + Math.random() * 20) + 'px';
+                container.appendChild(heart);
+            }
+        }
+        createBgHearts();
+
+        function showScreen(screenId) {
+            const screens = ['screenTitle', 'screenLevel1', 'screenLevel2', 'screenLevel3', 'screenLevel4', 'screenFinal'];
+            screens.forEach(id => {
+                const el = document.getElementById(id);
+                if (id === screenId) {
+                    el.classList.remove('hidden');
+                    el.classList.add('flex');
+                } else {
+                    el.classList.add('hidden');
+                    el.classList.remove('flex');
+                }
+            });
+        }
+
+        function startGame() {
+            showScreen('screenLevel1');
+            startLevel1();
+        }
+
+        let l1Score = 0;
+        let l1Canvas, l1Ctx, l1AnimationId;
+        let basket = { x: 0, width: 70, height: 20 };
+        let fallingItems = [];
+
+        function startLevel1() {
+            l1Score = 0;
+            document.getElementById('scoreText').innerText = l1Score;
+            document.getElementById('l1VictoryMsg').classList.add('hidden');
+            
+            l1Canvas = document.getElementById('gameCanvas');
+            l1Ctx = l1Canvas.getContext('2d');
+            
+            // Resize canvas
+            const rect = l1Canvas.parentElement.getBoundingClientRect();
+            l1Canvas.width = rect.width;
+            l1Canvas.height = rect.height;
+            basket.x = l1Canvas.width / 2 - basket.width / 2;
+            
+            fallingItems = [];
+
+            // Mouse / Touch listener
+            function updateBasketPos(clientX) {
+                const rect = l1Canvas.getBoundingClientRect();
+                const mouseX = clientX - rect.left;
+                basket.x = Math.max(0, Math.min(l1Canvas.width - basket.width, mouseX - basket.width / 2));
+            }
+
+            l1Canvas.onmousemove = (e) => updateBasketPos(e.clientX);
+            l1Canvas.ontouchmove = (e) => {
+                if (e.touches.length > 0) updateBasketPos(e.touches[0].clientX);
+            };
+
+            if (l1AnimationId) cancelAnimationFrame(l1AnimationId);
+            gameLoopLevel1();
+        }
+
+        function spawnFallingItem() {
+            if (Math.random() < 0.04 && fallingItems.length < 7) {
+                const isGolden = Math.random() < 0.2;
+                fallingItems.push({
+                    x: Math.random() * (l1Canvas.width - 30),
+                    y: -30,
+                    speed: 2 + Math.random() * 2.5,
+                    isGolden: isGolden,
+                    size: isGolden ? 28 : 22,
+                    char: isGolden ? '🌟' : '💖'
+                });
+            }
+        }
+
+        function gameLoopLevel1() {
+            l1Ctx.clearRect(0, 0, l1Canvas.width, l1Canvas.height);
+
+            // Draw Basket (Cute Bowl)
+            l1Ctx.fillStyle = '#f43f5e';
+            l1Ctx.beginPath();
+            l1Ctx.roundRect(basket.x, l1Canvas.height - 30, basket.width, basket.height, 10);
+            l1Ctx.fill();
+            l1Ctx.font = '16px Fredoka';
+            l1Ctx.fillStyle = '#ffffff';
+            l1Ctx.fillText('ALO 🎀', basket.x + 12, l1Canvas.height - 15);
+
+            // Spawn & Update Items
+            spawnFallingItem();
+
+            for (let i = fallingItems.length - 1; i >= 0; i--) {
+                let item = fallingItems[i];
+                item.y += item.speed;
+
+                // Draw Item
+                l1Ctx.font = item.size + 'px serif';
+                l1Ctx.fillText(item.char, item.x, item.y);
+
+                // Collision Check
+                if (item.y >= l1Canvas.height - 40 && item.y <= l1Canvas.height - 10) {
+                    if (item.x + item.size >= basket.x && item.x <= basket.x + basket.width) {
+                        // Caught!
+                        if (item.isGolden) {
+                            l1Score += 3;
+                            playGoldenSound();
+                        } else {
+                            l1Score += 1;
+                            playPopSound();
+                        }
+                        document.getElementById('scoreText').innerText = l1Score;
+                        fallingItems.splice(i, 1);
+
+                        if (l1Score >= 15) {
+                            document.getElementById('l1VictoryMsg').classList.remove('hidden');
+                            playFanfare();
+                            return; // Stop animation loop on win
+                        }
+                        continue;
+                    }
+                }
+
+                // Remove if off bottom
+                if (item.y > l1Canvas.height + 30) {
+                    fallingItems.splice(i, 1);
+                }
+            }
+
+            if (l1Score < 15) {
+                l1AnimationId = requestAnimationFrame(gameLoopLevel1);
+            }
+        }
+
+        function goToLevel2() {
+            showScreen('screenLevel2');
+            startLevel2();
+        }
+
+        const quizData = [
+            {
+                q: "What happens every single time ALO smiles? ✨",
+                options: [
+                    { text: "The entire room lights up instantly 🌟", reply: "Exactly! Pure magic! 💕" },
+                    { text: "Butterflies start dancing around 🦋", reply: "So true! Absolute sweetness! 🥰" },
+                    { text: "My heart skips a beat! 💖", reply: "100% yes! Every single time! ❤️" }
+                ]
+            },
+            {
+                q: "How much love is hidden inside this little quest? 🌸",
+                options: [
+                    { text: "More than all the stars in the sky 🌌", reply: "Infinitely more! ✨" },
+                    { text: "An endless universe amount 🚀", reply: "Bingo! Beyond measure! 💞" },
+                    { text: "Enough to make you smile all day 😊", reply: "That's the main goal! 💖" }
+                ]
+            },
+            {
+                q: "Who is the most precious and wonderful person today? 👑",
+                options: [
+                    { text: "ALO, without a doubt! 💗", reply: "Yes yes yes! Always ALO! 🎉" },
+                    { text: "The girl playing this game right now 💖", reply: "You guessed it! Perfect score! 🏆" }
+                ]
+            }
+        ];
+
+        let currentQIdx = 0;
+
+        function startLevel2() {
+            currentQIdx = 0;
+            renderQuizQuestion();
+        }
+
+        function renderQuizQuestion() {
+            const feedback = document.getElementById('quizFeedback');
+            feedback.innerText = "";
+            
+            if (currentQIdx >= quizData.length) {
+                feedback.innerText = "Quiz Completed with 100% Love! 💖";
+                playFanfare();
+                setTimeout(() => {
+                    showScreen('screenLevel3');
+                    startLevel3();
+                }, 1200);
+                return;
+            }
+
+            const q = quizData[currentQIdx];
+            document.getElementById('quizQuestion').innerText = q.q;
+            
+            const optionsDiv = document.getElementById('quizOptions');
+            optionsDiv.innerHTML = "";
+
+            q.options.forEach(opt => {
+                const btn = document.createElement('button');
+                btn.className = "w-full p-4 bg-white/90 hover:bg-pink-100 border-2 border-pink-200 text-pink-700 font-bold rounded-2xl shadow hover:scale-102 transition text-left text-sm md:text-base flex items-center justify-between";
+                btn.innerHTML = `<span>${opt.text}</span> <span>💗</span>`;
+                btn.onclick = () => handleQuizAnswer(opt.reply);
+                optionsDiv.appendChild(btn);
+            });
+        }
+
+        function handleQuizAnswer(reply) {
+            playPopSound();
+            document.getElementById('quizFeedback').innerText = reply;
+            setTimeout(() => {
+                currentQIdx++;
+                renderQuizQuestion();
+            }, 1000);
+        }
+
+        const compliments = [
+            { flower: "🌸", msg: "Your smile brightens the whole world ✨" },
+            { flower: "🌷", msg: "You make every single moment special 💞" },
+            { flower: "🌺", msg: "You have the kindest, sweetest heart 💖" },
+            { flower: "🌻", msg: "Life is so much sweeter with you in it 🍓" },
+            { flower: "🌹", msg: "Your laugh is my absolute favorite sound 🎵" }
+        ];
+
+        let bloomedCount = 0;
+
+        function startLevel3() {
+            bloomedCount = 0;
+            const grid = document.getElementById('flowerGrid');
+            grid.innerHTML = "";
+            document.getElementById('l3NextBtn').classList.add('hidden');
+
+            compliments.forEach((item, idx) => {
+                const card = document.createElement('div');
+                card.className = "flower-card glass-card p-4 rounded-2xl cursor-pointer border-2 border-pink-200 flex flex-col items-center justify-center min-h-[120px] text-center";
+                card.innerHTML = `
+                    <div class="text-4xl mb-2 transition-transform duration-300 transform" id="flw-${idx}">🌱</div>
+                    <div class="text-xs font-semibold text-pink-600" id="msg-${idx}">Tap to bloom!</div>
+                `;
+                card.onclick = () => bloomFlower(idx, item.flower, item.msg, card);
+                grid.appendChild(card);
+            });
+        }
+
+        function bloomFlower(idx, icon, msg, cardEl) {
+            const iconEl = document.getElementById(`flw-${idx}`);
+            const msgEl = document.getElementById(`msg-${idx}`);
+
+            if (iconEl.innerText === '🌱') {
+                bloomedCount++;
+                playBloomSound();
+                iconEl.innerText = icon;
+                iconEl.classList.add('scale-125');
+                msgEl.innerText = msg;
+                msgEl.className = "text-xs font-bold text-rose-600 animate-fade-in";
+                cardEl.classList.add('bg-pink-50/90', 'border-rose-300');
+
+                if (bloomedCount >= compliments.length) {
+                    document.getElementById('l3NextBtn').classList.remove('hidden');
+                    playFanfare();
+                }
+            }
+        }
+
+        function goToLevel4() {
+            showScreen('screenLevel4');
+        }
+
+        function moveCloud(el) {
+            playPopSound();
+            el.style.transform = `translate(${(Math.random() - 0.5) * 200}px, ${(Math.random() - 0.5) * 200}px) scale(0)`;
+            el.style.opacity = '0';
+            el.style.pointerEvents = 'none';
+        }
+
+        function revealGrandFinal() {
+            playFanfare();
+            showScreen('screenFinal');
+            triggerFireworks();
+        }
+
+        const canvas = document.getElementById('confettiCanvas');
+        const ctx = canvas.getContext('2d');
+        let particles = [];
+
+        function resizeCanvas() {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+        }
+        window.addEventListener('resize', resizeCanvas);
+        resizeCanvas();
+
+        function triggerFireworks() {
+            playFanfare();
+            for (let i = 0; i < 80; i++) {
+                particles.push({
+                    x: canvas.width / 2,
+                    y: canvas.height / 2,
+                    vx: (Math.random() - 0.5) * 12,
+                    vy: (Math.random() - 0.8) * 12,
+                    size: Math.random() * 12 + 6,
+                    color: `hsl(${Math.random() * 60 + 320}, 100%, 70%)`,
+                    life: 100,
+                    char: ['💖', '✨', '🌸', '💕'][Math.floor(Math.random() * 4)]
+                });
+            }
+        }
+
+        function animateParticles() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            for (let i = particles.length - 1; i >= 0; i--) {
+                let p = particles[i];
+                p.x += p.vx;
+                p.y += p.vy;
+                p.vy += 0.15; // gravity
+                p.life -= 1.5;
+
+                ctx.font = p.size + 'px serif';
+                ctx.globalAlpha = Math.max(0, p.life / 100);
+                ctx.fillText(p.char, p.x, p.y);
+
+                if (p.life <= 0) particles.splice(i, 1);
+            }
+            requestAnimationFrame(animateParticles);
+        }
+        animateParticles();
+
+        function resetGame() {
+            showScreen('screenTitle');
+        }
+    </script>
+</body>
+</html>
